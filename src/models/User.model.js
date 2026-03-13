@@ -1,5 +1,5 @@
 /**
- * User model representing the 'users' table schema.
+ * User model representing the 'users' table schema with lowercase column names.
  */
 class User {
   constructor({
@@ -22,7 +22,6 @@ class User {
     this.instance_id = instance_id;
   }
 
-  /** Return a safe public representation (no passwordhash). */
   toPublic() {
     return {
       id: this.id,

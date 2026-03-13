@@ -1,19 +1,25 @@
-const authService = require('../services/auth.service');
+const { verifyToken } = require('../utils/tokenGenerator');
 
-module.exports = {
-  verifyToken(req, res, next) {
-    try {
-      const token = req.headers.authorization?.split(' ')[1];
+/**
+ * JWT authentication middleware.
+ * Attaches the decoded payload to req.user on success.
+ */
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
 
-      if (!token) {
-        return res.status(401).json({ error: 'No token provided' });
-      }
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, message: 'Authorization token missing' });
+  }
 
-      const decoded = authService.verifyToken(token);
-      req.user = decoded;
-      next();
-    } catch (error) {
-      res.status(401).json({ error: error.message });
-    }
-  },
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = verifyToken(token);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+  }
 };
+
+module.exports = authMiddleware;

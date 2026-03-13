@@ -1,100 +1,50 @@
-const authService = require('../services/auth.service');
+const authService = require('../services/implementations/authService.impl');
 
-module.exports = {
-  async register(req, res) {
-    try {
-      console.log('Register request body:', req.body);
-      
-      const { email, password, fullname, phone } = req.body;
-
-      if (!email || !password) {
-        console.error('Missing email or password');
-        return res.status(400).json({ error: 'Email and password are required' });
-      }
-
-      const user = await authService.register(email, password, fullname, phone);
-      
-      console.log('User registered successfully:', user);
-      
-      res.status(201).json({
-        message: 'User registered successfully',
-        user: user,
-      });
-    } catch (error) {
-      console.error('===== REGISTER ERROR =====');
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      console.error('==========================');
-      res.status(400).json({ error: error.message });
-    }
-  },
-
-  async login(req, res) {
-    try {
-      console.log('Login request body:', req.body);
-      
-      const { email, password } = req.body;
-
-      if (!email || !password) {
-        console.error('Missing email or password');
-        return res.status(400).json({ error: 'Email and password are required' });
-      }
-
-      const { user, token } = await authService.login(email, password);
-
-      console.log('Login successful for user:', user.email);
-      
-      res.json({
-        message: 'Login successful',
-        token,
-        user,
-      });
-    } catch (error) {
-      console.error('===== LOGIN ERROR =====');
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      console.error('======================');
-      res.status(401).json({ error: error.message });
-    }
-  },
-
-  async getProfile(req, res) {
-    try {
-      const userId = req.user.id;
-      const user = await authService.getUserById(userId);
-
-      if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-      }
-
-      res.json({ user });
-    } catch (error) {
-      console.error('===== GET PROFILE ERROR =====');
-      console.error('Error:', error.message);
-      console.error('=============================');
-      res.status(500).json({ error: error.message });
-    }
-  },
-
-  async updateProfile(req, res) {
-    try {
-      const userId = req.user.id;
-      const { fullname, phone } = req.body;
-
-      const updatedUser = await authService.updateUser(userId, {
-        fullname,
-        phone,
-      });
-
-      res.json({
-        message: 'Profile updated successfully',
-        user: updatedUser,
-      });
-    } catch (error) {
-      console.error('===== UPDATE PROFILE ERROR =====');
-      console.error('Error:', error.message);
-      console.error('=================================');
-      res.status(400).json({ error: error.message });
-    }
-  },
+const register = async (req, res, next) => {
+  try {
+    console.log('[authController] Register endpoint hit');
+    console.log('[authController] Request body:', req.body);
+    
+    const { fullName, email, password, phone } = req.body;
+    const result = await authService.register(fullName, email, password, phone);
+    
+    console.log('[authController] Register successful');
+    return res.status(201).json({ success: true, data: result });
+  } catch (err) {
+    console.error('[authController] Register error caught:', {
+      message: err.message,
+      statusCode: err.statusCode,
+      stack: err.stack
+    });
+    next(err);
+  }
 };
+
+const login = async (req, res, next) => {
+  try {
+    console.log('[authController] Login endpoint hit');
+    console.log('[authController] Request body:', req.body);
+    
+    const { email, password } = req.body;
+    const result = await authService.login(email, password);
+    
+    console.log('[authController] Login successful');
+    return res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    console.error('[authController] Login error caught:', err.message);
+    next(err);
+  }
+};
+
+const getProfile = async (req, res, next) => {
+  try {
+    console.log('[authController] getProfile endpoint hit');
+    const user = await authService.getProfile(req.user.id);
+    return res.status(200).json({ success: true, data: user });
+  } catch (err) {
+    console.error('[authController] getProfile error caught:', err.message);
+    next(err);
+  }
+};
+
+module.exports = { register, login, getProfile };
