@@ -1,90 +1,37 @@
 /**
-<<<<<<< HEAD
- * User data model schema definition.
- * Represents the structure of a user record in Supabase.
- */
-module.exports = {
-  tableName: 'users',
-
-  /**
-   * Returns a sanitized user object (excludes sensitive fields).
-   * @param {Object} user - Raw user object from the database
-   * @returns {Object} Safe user object
-   */
-  toSafeUser(user) {
-    if (!user) return null;
-    const { password_hash, ...safeUser } = user;
-    return safeUser;
-  },
-
-  /**
-   * Schema reference (for documentation purposes).
-   * Actual table is managed in Supabase.
-   *
-   * CREATE TABLE users (
-   *   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-   *   email TEXT UNIQUE NOT NULL,
-   *   password_hash TEXT,
-   *   full_name TEXT,
-   *   avatar_url TEXT,
-   *   is_email_verified BOOLEAN DEFAULT FALSE,
-   *   created_at TIMESTAMPTZ DEFAULT NOW(),
-   *   updated_at TIMESTAMPTZ DEFAULT NOW()
-   * );
-   */
-  schema: {
-    id: 'UUID',
-    email: 'TEXT',
-    password_hash: 'TEXT',
-    full_name: 'TEXT',
-    avatar_url: 'TEXT',
-    is_email_verified: 'BOOLEAN',
-    created_at: 'TIMESTAMPTZ',
-    updated_at: 'TIMESTAMPTZ',
-  },
-};
-=======
- * User model representing the 'users' table schema with camelCase column names.
+ * User model representing the 'users' table schema.
  */
 class User {
   constructor({
     id,
     email,
-    passwordHash,
-    fullName,
+    passwordhash,
+    fullname,
     phone,
-    isEmailVerified = false,
-    emailVerifiedAt = null,
-    createdAt,
-    updatedAt,
-    deletedAt = null,
+    role,
+    aud,
+    instance_id,
   }) {
     this.id = id;
     this.email = email;
-    this.passwordHash = passwordHash;
-    this.fullName = fullName;
+    this.passwordhash = passwordhash;
+    this.fullname = fullname;
     this.phone = phone;
-    this.isEmailVerified = isEmailVerified;
-    this.emailVerifiedAt = emailVerifiedAt;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
-    this.deletedAt = deletedAt;
+    this.role = role;
+    this.aud = aud;
+    this.instance_id = instance_id;
   }
 
-  /** Return a safe public representation (no passwordHash). */
+  /** Return a safe public representation (no passwordhash). */
   toPublic() {
     return {
       id: this.id,
       email: this.email,
-      fullName: this.fullName,
+      fullname: this.fullname,
       phone: this.phone,
-      isEmailVerified: this.isEmailVerified,
-      emailVerifiedAt: this.emailVerifiedAt,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      role: this.role,
     };
   }
 }
 
 module.exports = User;
->>>>>>> deb2861ccc8a451638f9dea248c1f565f4dc3d32

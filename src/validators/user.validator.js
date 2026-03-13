@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-module.exports = require('./auth.validator');
-
-=======
 const { body, validationResult } = require('express-validator');
 
 /**
@@ -50,4 +46,3 @@ const validate = (req, res, next) => {
 };
 
 module.exports = { registerRules, loginRules, validate };
->>>>>>> deb2861ccc8a451638f9dea248c1f565f4dc3d32
