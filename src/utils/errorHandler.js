@@ -1,18 +1,19 @@
-/**
- * Centralised error handler for Express.
- * Must be registered as the last middleware: app.use(errorHandler)
- */
-const errorHandler = (err, req, res, next) => { // eslint-disable-line no-unused-vars
-  const status = err.statusCode || err.status || 500;
+const errorHandler = (err, req, res, next) => {
+  console.error('[errorHandler] Handling error');
+  console.error('[errorHandler] Message:', err.message);
+  console.error('[errorHandler] Status:', err.statusCode || 500);
 
-  // Supabase PostgREST errors carry a `message` field directly
-  const message = err.message || 'Internal server error';
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
 
-  if (process.env.APP_ENV !== 'production') {
-    console.error('[ErrorHandler]', err);
-  }
-
-  return res.status(status).json({ success: false, message });
+  res.status(statusCode).json({
+    success: false,
+    message: message,
+    ...(process.env.APP_ENV === 'development' && {
+      stack: err.stack,
+      fullError: err,
+    }),
+  });
 };
 
 module.exports = errorHandler;
