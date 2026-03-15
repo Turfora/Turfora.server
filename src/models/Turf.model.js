@@ -1,53 +1,104 @@
-/**
- * Turf model representing the 'turfs' table schema
- */
+
+
 class Turf {
   constructor({
     id,
-    name,
-    category,
-    location,
-    price_per_hour,
-    rating,
-    image_url,
-    description,
-    amenities,
-    availability,
-    is_featured,
     owner_id,
+    ownerId,
+    name,
+    description,
+    location,
+    category,
+    price_per_hour,
+    pricePerHour,
+    opening_time,
+    openingTime,
+    closing_time,
+    closingTime,
+    phone_number,
+    phoneNumber,
+    amenities = [],
+    images = [],
+    image_url,
+    imageUrl,
+    videos = [],
+    rating = 4.5,
+    is_featured,
+    isFeatured = false,
+    is_active,
+    isActive = true,
     created_at,
+    createdAt,
     updated_at,
+    updatedAt,
+    deleted_at,
+    deletedAt = null,
   }) {
+    // Handle both camelCase and snake_case from database
     this.id = id;
+    this.ownerId = ownerId || owner_id;
     this.name = name;
-    this.category = category;
-    this.location = location;
-    this.price_per_hour = price_per_hour;
-    this.rating = rating;
-    this.image_url = image_url;
     this.description = description;
-    this.amenities = amenities;
-    this.availability = availability;
-    this.is_featured = is_featured;
-    this.owner_id = owner_id;
-    this.created_at = created_at;
-    this.updated_at = updated_at;
+    this.location = location;
+    this.category = category;
+    this.pricePerHour = pricePerHour || price_per_hour;
+    this.openingTime = openingTime || opening_time || '06:00';
+    this.closingTime = closingTime || closing_time || '22:00';
+    this.phoneNumber = phoneNumber || phone_number;
+    this.amenities = Array.isArray(amenities) ? amenities : [];
+    this.images = Array.isArray(images) ? images : [];
+    this.imageUrl = imageUrl || image_url;
+    this.videos = Array.isArray(videos) ? videos : [];
+    this.rating = rating || 4.5;
+    this.isFeatured = isFeatured || is_featured || false;
+    this.isActive = isActive !== false && is_active !== false;
+    this.createdAt = createdAt || created_at;
+    this.updatedAt = updatedAt || updated_at;
+    this.deletedAt = deletedAt || deleted_at;
   }
 
+  /**
+   * Convert to public API response format
+   * Removes sensitive/internal fields and uses camelCase naming
+   */
   toPublic() {
     return {
       id: this.id,
+      ownerId: this.ownerId,
       name: this.name,
-      category: this.category,
-      location: this.location,
-      price_per_hour: this.price_per_hour,
-      rating: this.rating,
-      image_url: this.image_url,
       description: this.description,
+      location: this.location,
+      category: this.category,
+      pricePerHour: this.pricePerHour,
+      openingTime: this.openingTime,
+      closingTime: this.closingTime,
+      phoneNumber: this.phoneNumber,
       amenities: this.amenities,
-      availability: this.availability,
-      is_featured: this.is_featured,
+      images: this.images,
+      imageUrl: this.imageUrl,
+      videos: this.videos,
+      rating: this.rating,
+      isFeatured: this.isFeatured,
+      isActive: this.isActive, // STATUS: true = active, false = inactive
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
     };
+  }
+
+  /**
+   * Check if turf is currently available for booking
+   */
+  isAvailable() {
+    return this.isActive === true && this.deletedAt === null;
+  }
+
+  /**
+   * Get turf status as human-readable string
+   */
+  getStatus() {
+    if (this.deletedAt) return 'DELETED';
+    if (this.isActive) return 'ACTIVE';
+    return 'INACTIVE';
   }
 }
 

@@ -1,34 +1,28 @@
-/**
- * Booking model representing the 'bookings' table schema
+    /**
+ * Revenue model for tracking turf owner earnings
  */
-class Booking {
+class Revenue {
   constructor({
     id,
-    turfId,
-    userId,
     ownerId,
-    bookingDate,
-    startTime,
-    endTime,
+    turfId,
+    bookingId,
     amount,
-    status = 'pending',
+    transactionDate,
+    status = 'completed',
     notes = null,
-    isActive = true,
     createdAt,
     updatedAt,
     deletedAt = null,
   }) {
     this.id = id;
-    this.turfId = turfId;
-    this.userId = userId;
     this.ownerId = ownerId;
-    this.bookingDate = bookingDate;
-    this.startTime = startTime;
-    this.endTime = endTime;
+    this.turfId = turfId;
+    this.bookingId = bookingId;
     this.amount = amount;
+    this.transactionDate = transactionDate;
     this.status = status;
     this.notes = notes;
-    this.isActive = isActive;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
     this.deletedAt = deletedAt;
@@ -37,13 +31,11 @@ class Booking {
   toPublic() {
     return {
       id: this.id,
-      turfId: this.turfId,
-      userId: this.userId,
       ownerId: this.ownerId,
-      bookingDate: this.bookingDate,
-      startTime: this.startTime,
-      endTime: this.endTime,
+      turfId: this.turfId,
+      bookingId: this.bookingId,
       amount: this.amount,
+      transactionDate: this.transactionDate,
       status: this.status,
       notes: this.notes,
       createdAt: this.createdAt,
@@ -52,4 +44,4 @@ class Booking {
   }
 }
 
-module.exports = Booking;
+module.exports = Revenue;

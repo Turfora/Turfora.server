@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-// Error handling
+// ===== GLOBAL ERROR HANDLING =====
 process.on('unhandledRejection', (reason, promise) => {
   console.error('===== UNHANDLED REJECTION =====');
   console.error('Reason:', reason);
@@ -8,6 +8,7 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Error message:', reason.message);
     console.error('Stack trace:', reason.stack);
   }
+  console.error('Promise:', promise);
   console.error('==============================');
 });
 
@@ -23,6 +24,31 @@ const app = require('./app');
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const server = app.listen(PORT, () => {
+  console.log(`
+╔════════════════════════════════════╗
+║     🚀 Turfora Server Started      ║
+╠════════════════════════════════════╣
+║  Port: ${PORT}
+║  Environment: ${process.env.NODE_ENV || 'development'}
+║  Time: ${new Date().toISOString()}
+╚════════════════════════════════════╝
+  `);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('[Server] SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('[Server] HTTP server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('[Server] SIGINT signal received: closing HTTP server');
+  server.close(() => {
+    console.log('[Server] HTTP server closed');
+    process.exit(0);
+  });
 });
