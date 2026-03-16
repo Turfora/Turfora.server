@@ -230,6 +230,92 @@ const updateBookingStatus = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/owner/turfs/:ownerId
+ * Get turfs for a specific owner (ownerId in path must match authenticated user)
+ */
+const getTurfsByOwnerId = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Getting turfs by ownerId');
+    const { ownerId } = req.params;
+
+    if (String(req.user.id) !== String(ownerId)) {
+      const err = new Error('Unauthorized: You can only access your own turfs');
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const { turfs, count } = await ownerService.getTurfsByOwnerId(ownerId, limit, offset);
+
+    return res.status(200).json({
+      success: true,
+      data: turfs,
+      pagination: { total: count, limit, offset },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/owner/bookings/:ownerId
+ * Get bookings for a specific owner (ownerId in path must match authenticated user)
+ */
+const getBookingsByOwnerId = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Getting bookings by ownerId');
+    const { ownerId } = req.params;
+
+    if (String(req.user.id) !== String(ownerId)) {
+      const err = new Error('Unauthorized: You can only access your own bookings');
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const result = await ownerService.getBookingsByOwnerId(ownerId, limit, offset);
+
+    return res.status(200).json({
+      success: true,
+      data: result.bookings,
+      pagination: { total: result.count, limit, offset },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/owner/stats/:ownerId
+ * Get dashboard statistics for a specific owner
+ */
+const getOwnerStats = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Getting owner stats');
+    const { ownerId } = req.params;
+
+    if (String(req.user.id) !== String(ownerId)) {
+      const err = new Error('Unauthorized: You can only access your own stats');
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const stats = await ownerService.getOwnerStats(ownerId);
+
+    return res.status(200).json({
+      success: true,
+      data: stats,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getTurfs,
   getTurfById,
@@ -241,4 +327,7 @@ module.exports = {
   getTodayBookings,
   getBookings,
   updateBookingStatus,
+  getTurfsByOwnerId,
+  getBookingsByOwnerId,
+  getOwnerStats,
 };

@@ -160,6 +160,61 @@ const updateBookingStatus = async (bookingId, status, ownerId) => {
   }
 };
 
+/**
+ * Get all turfs by explicit owner ID (for /:ownerId routes)
+ */
+const getTurfsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
+  try {
+    console.log('[OwnerService] Getting turfs by ownerId:', ownerId);
+    return await turfRepo.findTurfsByOwnerId(ownerId, limit, offset);
+  } catch (error) {
+    console.error('[OwnerService] Error in getTurfsByOwnerId:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all bookings by explicit owner ID (for /:ownerId routes)
+ */
+const getBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
+  try {
+    console.log('[OwnerService] Getting bookings by ownerId:', ownerId);
+    return await bookingRepo.findBookingsByOwnerId(ownerId, limit, offset);
+  } catch (error) {
+    console.error('[OwnerService] Error in getBookingsByOwnerId:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get dashboard statistics for an owner
+ */
+const getOwnerStats = async (ownerId) => {
+  try {
+    console.log('[OwnerService] Getting owner stats for:', ownerId);
+
+    const [{ turfs, count: turfCount }, revenueStats, todayBookingsResult] = await Promise.all([
+      turfRepo.findTurfsByOwnerId(ownerId, 1000, 0),
+      revenueService.getRevenueStats(ownerId),
+      bookingRepo.findTodayBookings(ownerId),
+    ]);
+
+    const totalBookingsResult = await bookingRepo.findBookingsByOwnerId(ownerId, 1, 0);
+
+    return {
+      totalTurfs: turfCount || 0,
+      totalBookings: totalBookingsResult.count || 0,
+      todayBookings: todayBookingsResult.length || 0,
+      totalRevenue: revenueStats.totalRevenue || 0,
+      todayRevenue: revenueStats.todayRevenue || 0,
+      todayRevenuePercentage: revenueStats.todayRevenuePercentage || 0,
+    };
+  } catch (error) {
+    console.error('[OwnerService] Error in getOwnerStats:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   getTurfs,
   getTurfById,
@@ -171,4 +226,7 @@ module.exports = {
   getTodayBookings,
   getBookings,
   updateBookingStatus,
+  getTurfsByOwnerId,
+  getBookingsByOwnerId,
+  getOwnerStats,
 };
