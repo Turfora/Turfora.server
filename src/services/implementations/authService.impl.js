@@ -5,9 +5,10 @@ const { generateToken } = require('../../utils/tokenGenerator');
 
 const SALT_ROUNDS = 10;
 
-const register = async (fullName, email, password, phone) => {
+const register = async (fullName, email, password, phone, role = 'USER') => {
   try {
-    console.log('[authService] Register request:', { fullName, email, phone });
+    const safeRole = ['USER', 'OWNER'].includes(role) ? role : 'USER';
+    console.log('[authService] Register request:', { fullName, email, phone, role: safeRole });
     
     const existing = await userRepo.findUserByEmail(email);
     if (existing) {
@@ -26,6 +27,7 @@ const register = async (fullName, email, password, phone) => {
       passwordhash,
       fullname: fullName,
       phone: phone || null,
+      role: safeRole,
     });
 
     console.log('[authService] User created successfully:', { id: raw.id, email: raw.email });
