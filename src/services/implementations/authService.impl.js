@@ -26,12 +26,13 @@ const register = async (fullName, email, password, phone) => {
       passwordhash,
       fullname: fullName,
       phone: phone || null,
+      role: 'USER',
     });
 
     console.log('[authService] User created successfully:', { id: raw.id, email: raw.email });
     
     const user = new User(raw);
-    const token = generateToken({ id: user.id, email: user.email });
+    const token = generateToken({ id: user.id, email: user.email, role: user.role });
 
     return { user: user.toPublic(), token };
   } catch (error) {
@@ -68,7 +69,7 @@ const login = async (email, password) => {
 
     console.log('[authService] Login successful for user:', email);
     const user = new User(raw);
-    const token = generateToken({ id: user.id, email: user.email });
+    const token = generateToken({ id: user.id, email: user.email, role: user.role });
 
     const publicUser = user.toPublic();
     return { user: publicUser, token, role: publicUser.role };
