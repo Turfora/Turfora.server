@@ -22,19 +22,27 @@ const createTurf = async (req, res, next) => {
 
     const data = req.body;
 
-    // Validate required fields
-    if (!data.name || !data.pricePerHour || !data.location) {
-      const err = new Error('Missing required fields: name, pricePerHour, location');
+    // ==== FIX: Enforce correct field names ====
+    if (!data.name || !data.price_per_hour || !data.location) {
+      const err = new Error('Missing required fields: name, price_per_hour, location');
       err.statusCode = 400;
       throw err;
     }
 
-    // Add ownerId to data
-    data.ownerId = ownerId;
+    // Build data EXACTLY as your DB expects
+    const turfData = {
+      name: data.name,
+      price_per_hour: data.price_per_hour, // DB field name
+      location: data.location,
+      owner_id: ownerId,                   // DB field name
+      image_url: data.image_url,           // If owner sent an image
+      // any other fields: amenities, rating, etc. as needed
+    };
 
-    console.log('[TurfController] Creating turf with ownerId:', ownerId);
+    console.log('[TurfController] Creating turf with:', turfData);
 
-    const turf = await turfService.createTurf(data);
+    // Now use the correct data object to create in service
+    const turf = await turfService.createTurf(turfData);
 
     return res.status(201).json({
       success: true,
@@ -46,7 +54,6 @@ const createTurf = async (req, res, next) => {
     next(err);
   }
 };
-
 /**
  * GET /api/turfs
  * Get all turfs (public)

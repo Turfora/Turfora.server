@@ -98,57 +98,48 @@ const createTurf = async (data) => {
     console.log('[turfService] Creating turf with data:', data);
 
     // Validate required fields
-    if (!data.name || !data.pricePerHour || !data.location) {
-      const err = new Error('Missing required fields: name, pricePerHour, location');
+    if (!data.name || !data.price_per_hour || !data.location) {
+      const err = new Error('Missing required fields: name, price_per_hour, location');
       err.statusCode = 400;
       throw err;
     }
 
-    // CRITICAL: ownerId must be provided
-    if (!data.ownerId) {
-      console.error('[turfService] ownerId is missing!');
+    // CRITICAL: owner_id must be provided
+    if (!data.owner_id) {
+      console.error('[turfService] owner_id is missing!');
       const err = new Error('Owner ID is required. User must be authenticated.');
       err.statusCode = 401;
       throw err;
     }
 
-    console.log('[turfService] ownerId:', data.ownerId);
+    console.log('[turfService] owner_id:', data.owner_id);
     console.log('[turfService] Turf name:', data.name);
-    console.log('[turfService] Price:', data.pricePerHour);
+    console.log('[turfService] Price:', data.price_per_hour);
 
     const now = new Date().toISOString();
 
-    // Build complete turf data
+    // Build complete turf data with DB field names
     const turfData = {
-      // Basic Info
-      ownerId: data.ownerId, // From authenticated user
+      owner_id: data.owner_id,
       name: data.name,
       description: data.description,
       location: data.location,
       category: data.category || 'Cricket',
-      
-      // Pricing & Hours
-      pricePerHour: parseFloat(data.pricePerHour),
-      openingTime: normalizeTime(data.openingTime) || '06:00:00',
-      closingTime: normalizeTime(data.closingTime) || '22:00:00',
-      phoneNumber: data.phoneNumber,
-      
-      // Amenities & Media
+      price_per_hour: parseFloat(data.price_per_hour),
+      opening_time: normalizeTime(data.opening_time) || '06:00:00',
+      closing_time: normalizeTime(data.closing_time) || '22:00:00',
+      phone_number: data.phone_number,
       amenities: Array.isArray(data.amenities) ? data.amenities : [],
-      images: Array.isArray(data.images) ? data.images : [],
+      image_url: data.image_url, // <-- Important for images!
       videos: Array.isArray(data.videos) ? data.videos : [],
-      
-      // Status
-      isActive: true,
-      
-      // Timestamps (handled by repository)
+      is_active: true,
       created_at: now,
       updated_at: now,
     };
 
     console.log('[turfService] Final turf data for repo:', turfData);
 
-    // Call repository to create
+    // Call repository to create (make sure it also uses these names)
     const raw = await turfRepo.createTurf(turfData);
 
     console.log('[turfService] Turf created successfully:', raw.id);
@@ -161,7 +152,6 @@ const createTurf = async (data) => {
     throw error;
   }
 };
-
 /**
  * Update an existing turf
  */
