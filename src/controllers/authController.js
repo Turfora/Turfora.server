@@ -5,8 +5,8 @@ const register = async (req, res, next) => {
     console.log('[authController] Register endpoint hit');
     console.log('[authController] Request body:', req.body);
     
-    const { fullName, email, password, phone } = req.body;
-    const result = await authService.register(fullName, email, password, phone);
+    const { fullName, email, password, phone, role } = req.body;
+    const result = await authService.register(fullName, email, password, phone, role);
     
     console.log('[authController] Register successful');
     return res.status(201).json({ success: true, data: result });

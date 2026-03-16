@@ -19,6 +19,10 @@ const registerRules = [
     .optional()
     .isMobilePhone('any')
     .withMessage('A valid phone number is required'),
+  body('role')
+    .optional()
+    .isIn(['USER', 'OWNER'])
+    .withMessage('Role must be USER or OWNER'),
 ];
 
 /**
