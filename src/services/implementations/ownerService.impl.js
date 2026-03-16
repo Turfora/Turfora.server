@@ -28,7 +28,7 @@ const getTurfs = async (ownerId, limit = 50, offset = 0) => {
 const getTurfById = async (turfId, ownerId) => {
   try {
     console.log('[OwnerService] Getting turf:', turfId);
-    return await turfRepo.findTurfById(turfId, ownerId);
+    return await turfRepo.getTurfById(turfId, ownerId);
   } catch (error) {
     console.error('[OwnerService] Error in getTurfById:', error);
     throw error;

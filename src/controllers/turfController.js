@@ -98,8 +98,30 @@ const getTurfById = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/turfs/popular
+ * Get popular turfs sorted by rating (public)
+ */
+const getPopularTurfs = async (req, res, next) => {
+  try {
+    console.log('[TurfController] Getting popular turfs');
+    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+
+    const turfs = await turfService.getPopularTurfs(limit);
+
+    return res.status(200).json({
+      success: true,
+      data: turfs,
+    });
+  } catch (err) {
+    console.error('[TurfController] Error in getPopularTurfs:', err);
+    next(err);
+  }
+};
+
 module.exports = {
   createTurf,
   getTurfs,
   getTurfById,
+  getPopularTurfs,
 };

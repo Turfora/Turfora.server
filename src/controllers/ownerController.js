@@ -34,9 +34,31 @@ const getTurfById = async (req, res, next) => {
     const { turfId } = req.params;
 
     const turf = await ownerService.getTurfById(turfId, ownerId);
-    
+
     return res.status(200).json({
       success: true,
+      data: turf,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/owner/turfs/create
+ * Create a new turf (owner only)
+ */
+const createTurf = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Creating turf');
+    const ownerId = req.user.id;
+    const data = req.body;
+
+    const turf = await ownerService.createTurf(data, ownerId);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Turf created successfully',
       data: turf,
     });
   } catch (err) {
@@ -109,10 +131,114 @@ const getTurfStats = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/owner/revenue
+ * Get revenue statistics for owner
+ */
+const getRevenue = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Getting revenue');
+    const ownerId = req.user.id;
+
+    const revenue = await ownerService.getRevenue(ownerId);
+
+    return res.status(200).json({
+      success: true,
+      data: revenue,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/owner/bookings/today
+ * Get today's bookings for owner
+ */
+const getTodayBookings = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Getting today bookings');
+    const ownerId = req.user.id;
+
+    const result = await ownerService.getTodayBookings(ownerId);
+
+    return res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/owner/bookings
+ * Get all bookings for owner
+ */
+const getBookings = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Getting all bookings');
+    const ownerId = req.user.id;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+
+    const result = await ownerService.getBookings(ownerId, limit, offset);
+
+    return res.status(200).json({
+      success: true,
+      data: result.bookings,
+      pagination: { total: result.count, limit, offset },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PUT /api/owner/bookings/:bookingId/status
+ * Update booking status (owner only)
+ */
+const updateBookingStatus = async (req, res, next) => {
+  try {
+    console.log('[OwnerController] Updating booking status');
+    const ownerId = req.user.id;
+    const { bookingId } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      const err = new Error('Status is required');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const validStatuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      const err = new Error(`Invalid status. Must be one of: ${validStatuses.join(', ')}`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const booking = await ownerService.updateBookingStatus(bookingId, status, ownerId);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Booking status updated successfully',
+      data: booking,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getTurfs,
   getTurfById,
+  createTurf,
   updateTurf,
   deleteTurf,
   getTurfStats,
+  getRevenue,
+  getTodayBookings,
+  getBookings,
+  updateBookingStatus,
 };

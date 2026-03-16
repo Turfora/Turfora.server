@@ -258,8 +258,31 @@ const deleteTurf = async (id, ownerId) => {
 };
 
 /**
- * Get turf statistics
+ * Get popular turfs sorted by rating
  */
+const getPopularTurfs = async (limit = 10) => {
+  console.log('[TurfRepository] Getting popular turfs');
+
+  try {
+    const { data: turfs, error } = await supabase
+      .from(TABLE)
+      .select('*')
+      .is('deleted_at', null)
+      .eq('is_active', true)
+      .order('rating', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    console.log('[TurfRepository] Found', turfs?.length, 'popular turfs');
+    return turfs || [];
+  } catch (error) {
+    console.error('[TurfRepository] Error in getPopularTurfs:', error.message);
+    throw error;
+  }
+};
+
+
 const getTurfStats = async (turfId, ownerId) => {
   console.log('[TurfRepository] Getting turf stats');
 
@@ -303,5 +326,6 @@ module.exports = {
   createTurf,
   updateTurf,
   deleteTurf,
+  getPopularTurfs,
   getTurfStats,
 };

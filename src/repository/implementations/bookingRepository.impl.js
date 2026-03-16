@@ -13,16 +13,16 @@ const createBooking = async (data) => {
   const { data: booking, error } = await supabase
     .from(TABLE)
     .insert({
-      turf_id: data.turfId,
-      user_id: data.userId,
-      owner_id: data.ownerId,
-      booking_date: data.bookingDate,
-      start_time: data.startTime,
-      end_time: data.endTime,
+      turf_id: data.turf_id,
+      user_id: data.user_id,
+      owner_id: data.owner_id,
+      booking_date: data.booking_date,
+      start_time: data.start_time,
+      end_time: data.end_time,
       amount: data.amount,
       status: data.status || 'pending',
       notes: data.notes || null,
-      is_active: data.isActive !== false,
+      is_active: data.is_active !== false,
       created_at: now,
       updated_at: now,
     })

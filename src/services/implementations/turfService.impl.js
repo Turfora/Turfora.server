@@ -2,6 +2,16 @@ const turfRepo = require('../../repository/implementations/turfRepository.impl')
 const Turf = require('../../models/Turf.model');
 
 /**
+ * Normalize time format from HH:MM to HH:MM:SS
+ */
+const normalizeTime = (time) => {
+  if (!time) return null;
+  if (time.match(/^\d{2}:\d{2}:\d{2}$/)) return time;
+  if (time.match(/^\d{2}:\d{2}$/)) return time + ':00';
+  return null;
+};
+
+/**
  * Get all turfs with pagination and filters
  */
 const getAllTurfs = async (category = null, limit = 50, offset = 0) => {
@@ -119,8 +129,8 @@ const createTurf = async (data) => {
       
       // Pricing & Hours
       pricePerHour: parseFloat(data.pricePerHour),
-      openingTime: data.openingTime || '06:00',
-      closingTime: data.closingTime || '22:00',
+      openingTime: normalizeTime(data.openingTime) || '06:00:00',
+      closingTime: normalizeTime(data.closingTime) || '22:00:00',
       phoneNumber: data.phoneNumber,
       
       // Amenities & Media
@@ -200,8 +210,24 @@ const deleteTurf = async (id, ownerId) => {
 };
 
 /**
- * Get turfs by owner ID
+ * Get popular turfs sorted by rating
  */
+const getPopularTurfs = async (limit = 10) => {
+  try {
+    console.log('[turfService] Getting popular turfs, limit:', limit);
+
+    const raw = await turfRepo.getPopularTurfs(limit);
+
+    console.log('[turfService] Retrieved', raw.length, 'popular turfs');
+
+    return raw.map(t => new Turf(t).toPublic());
+  } catch (error) {
+    console.error('[turfService] getPopularTurfs error:', error.message);
+    throw error;
+  }
+};
+
+
 const getTurfsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
   try {
     console.log('[turfService] Getting turfs for owner:', ownerId);
@@ -233,5 +259,6 @@ module.exports = {
   createTurf,
   updateTurf,
   deleteTurf,
+  getPopularTurfs,
   getTurfsByOwnerId,
 };
