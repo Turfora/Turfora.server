@@ -7,10 +7,21 @@ const revenueRepo = require('../../repository/implementations/revenueRepository.
 const calculateTotalRevenue = async (ownerId) => {
   console.log('[RevenueService] Calculating total revenue');
 
+  const { data: turfs, error: turfError } = await supabase
+    .from('turfs')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .is('deleted_at', null);
+
+  if (turfError) throw turfError;
+  if (!turfs || turfs.length === 0) return 0;
+
+  const turfIds = turfs.map(t => t.id);
+
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select('amount')
-    .eq('owner_id', ownerId)
+    .in('turf_id', turfIds)
     .in('status', ['completed', 'confirmed'])
     .is('deleted_at', null);
 
@@ -31,10 +42,21 @@ const calculateTodayRevenue = async (ownerId) => {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
+  const { data: turfs, error: turfError } = await supabase
+    .from('turfs')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .is('deleted_at', null);
+
+  if (turfError) throw turfError;
+  if (!turfs || turfs.length === 0) return 0;
+
+  const turfIds = turfs.map(t => t.id);
+
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select('amount')
-    .eq('owner_id', ownerId)
+    .in('turf_id', turfIds)
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', today.toISOString().split('T')[0])
     .lt('booking_date', tomorrow.toISOString().split('T')[0])
@@ -57,10 +79,21 @@ const calculateYesterdayRevenue = async (ownerId) => {
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
+  const { data: turfs, error: turfError } = await supabase
+    .from('turfs')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .is('deleted_at', null);
+
+  if (turfError) throw turfError;
+  if (!turfs || turfs.length === 0) return 0;
+
+  const turfIds = turfs.map(t => t.id);
+
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select('amount')
-    .eq('owner_id', ownerId)
+    .in('turf_id', turfIds)
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', yesterday.toISOString().split('T')[0])
     .lt('booking_date', today.toISOString().split('T')[0])
@@ -81,10 +114,21 @@ const calculateMonthlyRevenue = async (ownerId, month, year) => {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 0);
 
+  const { data: turfs, error: turfError } = await supabase
+    .from('turfs')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .is('deleted_at', null);
+
+  if (turfError) throw turfError;
+  if (!turfs || turfs.length === 0) return 0;
+
+  const turfIds = turfs.map(t => t.id);
+
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select('amount')
-    .eq('owner_id', ownerId)
+    .in('turf_id', turfIds)
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', startDate.toISOString().split('T')[0])
     .lte('booking_date', endDate.toISOString().split('T')[0])
@@ -130,7 +174,6 @@ const getRevenueByTurf = async (ownerId, turfId) => {
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select('amount')
-    .eq('owner_id', ownerId)
     .eq('turf_id', turfId)
     .in('status', ['completed', 'confirmed'])
     .is('deleted_at', null);
@@ -147,10 +190,30 @@ const getRevenueByTurf = async (ownerId, turfId) => {
 const getRevenueByDateRange = async (ownerId, startDate, endDate) => {
   console.log('[RevenueService] Getting revenue by date range');
 
+  const { data: turfs, error: turfError } = await supabase
+    .from('turfs')
+    .select('id')
+    .eq('owner_id', ownerId)
+    .is('deleted_at', null);
+
+  if (turfError) throw turfError;
+
+  if (!turfs || turfs.length === 0) {
+    return {
+      startDate,
+      endDate,
+      revenue: 0,
+      bookingCount: 0,
+      averagePerBooking: 0,
+    };
+  }
+
+  const turfIds = turfs.map(t => t.id);
+
   const { data: bookings, error } = await supabase
     .from('bookings')
     .select('amount')
-    .eq('owner_id', ownerId)
+    .in('turf_id', turfIds)
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', new Date(startDate).toISOString().split('T')[0])
     .lte('booking_date', new Date(endDate).toISOString().split('T')[0])

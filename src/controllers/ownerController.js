@@ -282,10 +282,15 @@ const getBookingsByOwnerId = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      data: result.bookings,
+      data: {
+        bookings: result.bookings,
+        count: result.count,
+        timestamp: new Date().toISOString(),
+      },
       pagination: { total: result.count, limit, offset },
     });
   } catch (err) {
+    console.error('[OwnerController] Error in getBookingsByOwnerId:', err);
     next(err);
   }
 };
