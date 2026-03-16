@@ -66,7 +66,6 @@ const createBooking = async (req, res, next) => {
       .from('turfs')
       .select('*')
       .eq('id', turfId)
-      .is('deleted_at', null)
       .single();
 
     if (turfError || !turf) {
@@ -156,7 +155,6 @@ const getUserBookings = async (req, res, next) => {
         owner:users(id, fullname, phone)
       `, { count: 'exact' })
       .eq('user_id', userId)
-      .is('deleted_at', null)
       .order('booking_date', { ascending: false });
 
     if (status) {
@@ -209,7 +207,6 @@ const getBookingDetails = async (req, res, next) => {
         owner:users(id, fullname, email, phone)
       `)
       .eq('id', bookingId)
-      .is('deleted_at', null)
       .single();
 
     if (error || !booking) {

@@ -11,7 +11,6 @@ const calculateTotalRevenue = async (ownerId) => {
     .from('turfs')
     .select('id')
     .eq('owner_id', ownerId)
-    .is('deleted_at', null);
 
   if (turfError) throw turfError;
   if (!turfs || turfs.length === 0) return 0;
@@ -23,7 +22,6 @@ const calculateTotalRevenue = async (ownerId) => {
     .select('amount')
     .in('turf_id', turfIds)
     .in('status', ['completed', 'confirmed'])
-    .is('deleted_at', null);
 
   if (error) throw error;
 
@@ -46,7 +44,6 @@ const calculateTodayRevenue = async (ownerId) => {
     .from('turfs')
     .select('id')
     .eq('owner_id', ownerId)
-    .is('deleted_at', null);
 
   if (turfError) throw turfError;
   if (!turfs || turfs.length === 0) return 0;
@@ -60,7 +57,6 @@ const calculateTodayRevenue = async (ownerId) => {
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', today.toISOString().split('T')[0])
     .lt('booking_date', tomorrow.toISOString().split('T')[0])
-    .is('deleted_at', null);
 
   if (error) throw error;
 
@@ -83,7 +79,6 @@ const calculateYesterdayRevenue = async (ownerId) => {
     .from('turfs')
     .select('id')
     .eq('owner_id', ownerId)
-    .is('deleted_at', null);
 
   if (turfError) throw turfError;
   if (!turfs || turfs.length === 0) return 0;
@@ -97,7 +92,6 @@ const calculateYesterdayRevenue = async (ownerId) => {
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', yesterday.toISOString().split('T')[0])
     .lt('booking_date', today.toISOString().split('T')[0])
-    .is('deleted_at', null);
 
   if (error) throw error;
 
@@ -118,7 +112,6 @@ const calculateMonthlyRevenue = async (ownerId, month, year) => {
     .from('turfs')
     .select('id')
     .eq('owner_id', ownerId)
-    .is('deleted_at', null);
 
   if (turfError) throw turfError;
   if (!turfs || turfs.length === 0) return 0;
@@ -132,7 +125,6 @@ const calculateMonthlyRevenue = async (ownerId, month, year) => {
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', startDate.toISOString().split('T')[0])
     .lte('booking_date', endDate.toISOString().split('T')[0])
-    .is('deleted_at', null);
 
   if (error) throw error;
 
@@ -176,7 +168,6 @@ const getRevenueByTurf = async (ownerId, turfId) => {
     .select('amount')
     .eq('turf_id', turfId)
     .in('status', ['completed', 'confirmed'])
-    .is('deleted_at', null);
 
   if (error) throw error;
 
@@ -194,7 +185,6 @@ const getRevenueByDateRange = async (ownerId, startDate, endDate) => {
     .from('turfs')
     .select('id')
     .eq('owner_id', ownerId)
-    .is('deleted_at', null);
 
   if (turfError) throw turfError;
 
@@ -217,7 +207,6 @@ const getRevenueByDateRange = async (ownerId, startDate, endDate) => {
     .in('status', ['completed', 'confirmed'])
     .gte('booking_date', new Date(startDate).toISOString().split('T')[0])
     .lte('booking_date', new Date(endDate).toISOString().split('T')[0])
-    .is('deleted_at', null);
 
   if (error) throw error;
 

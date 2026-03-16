@@ -13,7 +13,6 @@ const getAllTurfs = async (category = null, limit = 50, offset = 0) => {
     let query = supabase
       .from(TABLE)
       .select('*', { count: 'exact' })
-      .is('deleted_at', null)
       .eq('is_active', true)
       .order('created_at', { ascending: false });
 
@@ -47,7 +46,6 @@ const getTurfs = async (filters = {}) => {
     let query = supabase
       .from(TABLE)
       .select('*')
-      .is('deleted_at', null)
       .eq('is_active', true);
 
     if (filters.category) {
@@ -77,7 +75,6 @@ const getTurfById = async (id, ownerId = null) => {
       .from(TABLE)
       .select('*')
       .eq('id', id)
-      .is('deleted_at', null);
 
     if (ownerId) {
       query = query.eq('owner_id', ownerId);
@@ -108,7 +105,6 @@ const findTurfsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
       .from(TABLE)
       .select('*', { count: 'exact' })
       .eq('owner_id', ownerId)
-      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -267,7 +263,6 @@ const getPopularTurfs = async (limit = 10) => {
     const { data: turfs, error } = await supabase
       .from(TABLE)
       .select('*')
-      .is('deleted_at', null)
       .eq('is_active', true)
       .order('rating', { ascending: false })
       .limit(limit);
