@@ -15,7 +15,6 @@ const createBooking = async (data) => {
     .insert({
       turf_id: data.turf_id,
       user_id: data.user_id,
-      owner_id: data.owner_id,
       booking_date: data.booking_date,
       start_time: data.start_time,
       end_time: data.end_time,
@@ -65,11 +64,30 @@ const findTodayBookings = async (ownerId) => {
   const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
   try {
-    // Step 1: Get bookings
+    // Step 1: Get all turfs owned by this owner
+    const { data: turfs, error: turfError } = await supabase
+      .from('turfs')
+      .select('id')
+      .eq('owner_id', ownerId)
+      .is('deleted_at', null);
+
+    if (turfError) {
+      console.error('[BookingRepository] Error fetching turfs:', turfError);
+      throw turfError;
+    }
+
+    if (!turfs || turfs.length === 0) {
+      console.log('[BookingRepository] No turfs found for owner:', ownerId);
+      return [];
+    }
+
+    const turfIds = turfs.map(t => t.id);
+
+    // Step 2: Get bookings for those turfs
     const { data: bookings, error } = await supabase
       .from(TABLE)
       .select('*')
-      .eq('owner_id', ownerId)
+      .in('turf_id', turfIds)
       .gte('booking_date', todayStr)
       .lt('booking_date', tomorrowStr)
       .is('deleted_at', null)
@@ -136,11 +154,30 @@ const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
   console.log('[BookingRepository] Finding bookings for owner:', ownerId);
 
   try {
-    // Step 1: Get bookings
+    // Step 1: Get all turfs owned by this owner
+    const { data: turfs, error: turfError } = await supabase
+      .from('turfs')
+      .select('id')
+      .eq('owner_id', ownerId)
+      .is('deleted_at', null);
+
+    if (turfError) {
+      console.error('[BookingRepository] Error fetching turfs:', turfError);
+      throw turfError;
+    }
+
+    if (!turfs || turfs.length === 0) {
+      console.log('[BookingRepository] No turfs found for owner:', ownerId);
+      return { bookings: [], count: 0 };
+    }
+
+    const turfIds = turfs.map(t => t.id);
+
+    // Step 2: Get bookings for those turfs
     const { data: bookings, error, count } = await supabase
       .from(TABLE)
       .select('*', { count: 'exact' })
-      .eq('owner_id', ownerId)
+      .in('turf_id', turfIds)
       .is('deleted_at', null)
       .order('booking_date', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -152,7 +189,7 @@ const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
 
     console.log('[BookingRepository] Found bookings:', bookings?.length);
 
-    // Step 2: Fetch turf and user details separately
+    // Step 3: Fetch turf and user details separately
     const enrichedBookings = await Promise.all(
       (bookings || []).map(async (b) => {
         let turfName = 'Unknown';
@@ -206,25 +243,52 @@ const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
 const updateBookingStatus = async (id, status, ownerId) => {
   console.log('[BookingRepository] Updating booking status:', id);
 
-  const { data: booking, error } = await supabase
+  // Verify that the booking belongs to a turf owned by this owner
+  const { data: booking, error: fetchError } = await supabase
+    .from(TABLE)
+    .select('id, turf_id')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .single();
+
+  if (fetchError || !booking) {
+    const err = new Error('Booking not found');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const { data: turf, error: turfError } = await supabase
+    .from('turfs')
+    .select('id')
+    .eq('id', booking.turf_id)
+    .eq('owner_id', ownerId)
+    .is('deleted_at', null)
+    .single();
+
+  if (turfError || !turf) {
+    const err = new Error('Booking not found or you are not the owner');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const { data: updatedBooking, error } = await supabase
     .from(TABLE)
     .update({
       status,
       updated_at: new Date().toISOString(),
     })
     .eq('id', id)
-    .eq('owner_id', ownerId)
     .select()
     .single();
 
   if (error) throw error;
-  if (!booking) {
+  if (!updatedBooking) {
     const err = new Error('Booking not found or you are not the owner');
     err.statusCode = 404;
     throw err;
   }
 
-  return new Booking(booking).toPublic();
+  return new Booking(updatedBooking).toPublic();
 };
 
 /**
@@ -237,10 +301,26 @@ const getBookingsByDateRange = async (ownerId, startDate, endDate) => {
     const startStr = new Date(startDate).toISOString().split('T')[0];
     const endStr = new Date(endDate).toISOString().split('T')[0];
 
+    // Step 1: Get all turfs owned by this owner
+    const { data: turfs, error: turfError } = await supabase
+      .from('turfs')
+      .select('id')
+      .eq('owner_id', ownerId)
+      .is('deleted_at', null);
+
+    if (turfError) throw turfError;
+
+    if (!turfs || turfs.length === 0) {
+      return [];
+    }
+
+    const turfIds = turfs.map(t => t.id);
+
+    // Step 2: Get bookings for those turfs within the date range
     const { data: bookings, error } = await supabase
       .from(TABLE)
       .select('*')
-      .eq('owner_id', ownerId)
+      .in('turf_id', turfIds)
       .gte('booking_date', startStr)
       .lte('booking_date', endStr)
       .is('deleted_at', null)

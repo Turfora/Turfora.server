@@ -179,7 +179,22 @@ const getTurfsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
 const getBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
   try {
     console.log('[OwnerService] Getting bookings by ownerId:', ownerId);
-    return await bookingRepo.findBookingsByOwnerId(ownerId, limit, offset);
+    const result = await bookingRepo.findBookingsByOwnerId(ownerId, limit, offset);
+
+    const bookings = (result.bookings || []).map(b => ({
+      id: b.id,
+      turfName: b.turfName || 'Unknown Turf',
+      userName: b.userName || 'Unknown User',
+      userEmail: b.userEmail || '',
+      startTime: b.startTime,
+      endTime: b.endTime,
+      amount: b.amount,
+      status: b.status,
+      bookingDate: b.bookingDate,
+      userPhone: b.userPhone || '',
+    }));
+
+    return { bookings, count: result.count };
   } catch (error) {
     console.error('[OwnerService] Error in getBookingsByOwnerId:', error);
     throw error;
