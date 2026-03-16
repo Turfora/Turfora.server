@@ -19,10 +19,8 @@ router.use(authMiddleware);
 // TURF ROUTES
 router.post('/turfs/create', ownerController.createTurf);
 router.get('/turfs', ownerController.getTurfs);
-router.get('/turfs/:turfId', ownerController.getTurfById);
 router.put('/turfs/:turfId', ownerController.updateTurf);
 router.delete('/turfs/:turfId', ownerController.deleteTurf);
-router.get('/turfs/:turfId/stats', ownerController.getTurfStats);
 
 // REVENUE ROUTES
 router.get('/revenue', ownerController.getRevenue);
@@ -31,5 +29,11 @@ router.get('/revenue', ownerController.getRevenue);
 router.get('/bookings/today', ownerController.getTodayBookings);
 router.get('/bookings', ownerController.getBookings);
 router.put('/bookings/:bookingId/status', ownerController.updateBookingStatus);
+
+// OWNER-ID PARAMETERISED ROUTES (used by frontend dashboard)
+// Note: GET /api/turfs/:id and GET /api/turfs/:id/stats are available via turfRoutes
+router.get('/turfs/:ownerId', ownerController.getTurfsByOwnerId);
+router.get('/bookings/:ownerId', ownerController.getBookingsByOwnerId);
+router.get('/stats/:ownerId', ownerController.getOwnerStats);
 
 module.exports = router;
