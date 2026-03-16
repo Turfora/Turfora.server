@@ -18,10 +18,8 @@ const createBooking = async (data) => {
       booking_date: data.booking_date,
       start_time: data.start_time,
       end_time: data.end_time,
-      amount: data.amount,
+      total_price: data.total_price,
       status: data.status || 'pending',
-      notes: data.notes || null,
-      is_active: data.is_active !== false,
       created_at: now,
       updated_at: now,
     })
@@ -29,7 +27,7 @@ const createBooking = async (data) => {
     .single();
 
   if (error) throw error;
-  return new Booking(booking).toPublic();
+  return booking;
 };
 
 /**
@@ -49,7 +47,7 @@ const findBookingById = async (id) => {
 };
 
 /**
- * Find today's bookings for an owner - WITHOUT FK JOINS
+ * Find today's bookings for an owner (fetch by turf owner)
  */
 const findTodayBookings = async (ownerId) => {
   console.log('[BookingRepository] Finding today bookings for owner:', ownerId);
@@ -67,7 +65,7 @@ const findTodayBookings = async (ownerId) => {
     const { data: turfs, error: turfError } = await supabase
       .from('turfs')
       .select('id')
-      .eq('owner_id', ownerId)
+      .eq('owner_id', ownerId);
 
     if (turfError) {
       console.error('[BookingRepository] Error fetching turfs:', turfError);
@@ -97,14 +95,13 @@ const findTodayBookings = async (ownerId) => {
 
     console.log('[BookingRepository] Found bookings:', bookings?.length);
 
-    // Step 2: Fetch turf and user details separately if needed
+    // Step 3: Fetch turf and user details separately
     const enrichedBookings = await Promise.all(
       (bookings || []).map(async (b) => {
         let turfName = 'Unknown';
         let userName = 'Unknown';
 
         try {
-          // Fetch turf name
           const { data: turf } = await supabase
             .from('turfs')
             .select('name')
@@ -117,7 +114,6 @@ const findTodayBookings = async (ownerId) => {
         }
 
         try {
-          // Fetch user name
           const { data: user } = await supabase
             .from('users')
             .select('fullname')
@@ -145,7 +141,7 @@ const findTodayBookings = async (ownerId) => {
 };
 
 /**
- * Find all bookings for an owner with pagination - WITHOUT FK JOINS
+ * Find all bookings for an owner (by owner's turfs) with pagination
  */
 const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
   console.log('[BookingRepository] Finding bookings for owner:', ownerId);
@@ -155,7 +151,7 @@ const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
     const { data: turfs, error: turfError } = await supabase
       .from('turfs')
       .select('id')
-      .eq('owner_id', ownerId)
+      .eq('owner_id', ownerId);
 
     if (turfError) {
       console.error('[BookingRepository] Error fetching turfs:', turfError);
@@ -235,31 +231,17 @@ const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
 /**
  * Update booking status
  */
-const updateBookingStatus = async (id, status, ownerId) => {
+const updateBookingStatus = async (id, status) => {
   console.log('[BookingRepository] Updating booking status:', id);
 
-  // Verify that the booking belongs to a turf owned by this owner
   const { data: booking, error: fetchError } = await supabase
     .from(TABLE)
-    .select('id, turf_id')
+    .select('*')
     .eq('id', id)
     .single();
 
   if (fetchError || !booking) {
     const err = new Error('Booking not found');
-    err.statusCode = 404;
-    throw err;
-  }
-
-  const { data: turf, error: turfError } = await supabase
-    .from('turfs')
-    .select('id')
-    .eq('id', booking.turf_id)
-    .eq('owner_id', ownerId)
-    .single();
-
-  if (turfError || !turf) {
-    const err = new Error('Booking not found or you are not the owner');
     err.statusCode = 404;
     throw err;
   }
@@ -276,7 +258,7 @@ const updateBookingStatus = async (id, status, ownerId) => {
 
   if (error) throw error;
   if (!updatedBooking) {
-    const err = new Error('Booking not found or you are not the owner');
+    const err = new Error('Booking not found');
     err.statusCode = 404;
     throw err;
   }
@@ -285,7 +267,7 @@ const updateBookingStatus = async (id, status, ownerId) => {
 };
 
 /**
- * Get bookings by date range - WITHOUT FK JOINS
+ * Get bookings by date range
  */
 const getBookingsByDateRange = async (ownerId, startDate, endDate) => {
   console.log('[BookingRepository] Getting bookings by date range');
@@ -298,7 +280,7 @@ const getBookingsByDateRange = async (ownerId, startDate, endDate) => {
     const { data: turfs, error: turfError } = await supabase
       .from('turfs')
       .select('id')
-      .eq('owner_id', ownerId)
+      .eq('owner_id', ownerId);
 
     if (turfError) throw turfError;
 
@@ -332,4 +314,4 @@ module.exports = {
   findBookingsByOwnerId,
   updateBookingStatus,
   getBookingsByDateRange,
-};
+};  

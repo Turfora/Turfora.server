@@ -7,12 +7,10 @@ const Booking = require('../models/Booking.model');
 const normalizeTime = (time) => {
   if (!time) return null;
   
-  // If already HH:MM:SS, return as is
   if (time.match(/^\d{2}:\d{2}:\d{2}$/)) {
     return time;
   }
   
-  // If HH:MM, add :00 for seconds
   if (time.match(/^\d{2}:\d{2}$/)) {
     return time + ':00';
   }
@@ -28,7 +26,7 @@ const createBooking = async (req, res, next) => {
   try {
     console.log('[BookingController] Creating new booking');
     const userId = req.user.id;
-    const { turfId, bookingDate, startTime, endTime, notes } = req.body;
+    const { turfId, bookingDate, startTime, endTime } = req.body;
 
     // Validate required fields
     if (!turfId || !bookingDate || !startTime || !endTime) {
@@ -48,11 +46,6 @@ const createBooking = async (req, res, next) => {
       throw err;
     }
 
-    console.log('[BookingController] Normalized times:', {
-      startTime: normalizedStartTime,
-      endTime: normalizedEndTime,
-    });
-
     // Validate start time is before end time
     if (normalizedStartTime >= normalizedEndTime) {
       const err = new Error('Start time must be before end time');
@@ -60,7 +53,7 @@ const createBooking = async (req, res, next) => {
       throw err;
     }
 
-    // Get turf details to get owner ID and calculate amount
+    // Get turf details
     const db = require('../config/db.config');
     const { data: turf, error: turfError } = await db
       .from('turfs')
@@ -75,58 +68,41 @@ const createBooking = async (req, res, next) => {
       throw err;
     }
 
-    console.log('[BookingController] Turf found:', turf.id, 'is_active:', turf.is_active);
-
     if (!turf.is_active) {
       const err = new Error('This turf is currently inactive');
       err.statusCode = 400;
       throw err;
     }
 
-    // Calculate amount based on price per hour
+    // Calculate total_price
     const [startHour] = normalizedStartTime.split(':');
     const [endHour] = normalizedEndTime.split(':');
     const hoursCount = parseInt(endHour) - parseInt(startHour);
-    
+
     if (hoursCount <= 0) {
       const err = new Error('Invalid booking duration');
       err.statusCode = 400;
       throw err;
     }
 
-    const amount = hoursCount * turf.price_per_hour;
-
-    console.log('[BookingController] Booking calculation:', {
-      startHour,
-      endHour,
-      hoursCount,
-      pricePerHour: turf.price_per_hour,
-      amount,
-    });
+    const total_price = hoursCount * turf.price_per_hour;
 
     const bookingData = {
       turf_id: turfId,
       user_id: userId,
-      owner_id: turf.owner_id,
-      booking_date: new Date(bookingDate).toISOString().split('T')[0], // Ensure date format
+      booking_date: new Date(bookingDate).toISOString().split('T')[0],
       start_time: normalizedStartTime,
       end_time: normalizedEndTime,
-      amount,
-      notes: notes || null,
-      status: 'pending',
-      is_active: true,
+      total_price,
+      status: 'pending'
     };
 
-    console.log('[BookingController] Booking data:', bookingData);
-
     const booking = await bookingRepo.createBooking(bookingData);
-
-    console.log('[BookingController] Booking created:', booking.id);
 
     return res.status(201).json({
       success: true,
       message: 'Booking created successfully',
-      data: new Booking(booking).toPublic(),
+      data: booking,
     });
   } catch (err) {
     console.error('[BookingController] Error in createBooking:', err.message);
@@ -136,7 +112,7 @@ const createBooking = async (req, res, next) => {
 
 /**
  * GET /api/bookings/my-bookings
- * Get all bookings for logged-in user
+ * Get all bookings for logged-in user (FIXED: NO owner_id, NO RELATIONSHIP SYNTAX)
  */
 const getUserBookings = async (req, res, next) => {
   try {
@@ -144,16 +120,14 @@ const getUserBookings = async (req, res, next) => {
     const userId = req.user.id;
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
-    const status = req.query.status; // Optional filter by status
+    const status = req.query.status;
 
     const db = require('../config/db.config');
+
+    // Step 1: Get bookings for user
     let query = db
       .from('bookings')
-      .select(`
-        *,
-        turf:turfs(id, name, location, image_url, price_per_hour, category),
-        owner:users(id, fullname, phone)
-      `, { count: 'exact' })
+      .select('*', { count: 'exact' })
       .eq('user_id', userId)
       .order('booking_date', { ascending: false });
 
@@ -163,22 +137,45 @@ const getUserBookings = async (req, res, next) => {
 
     const { data: bookings, error, count } = await query.range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    if (error) {
+      console.error('[BookingController] Error fetching bookings:', error);
+      throw error;
+    }
 
-    const formattedBookings = (bookings || []).map(b => ({
-      ...new Booking(b).toPublic(),
-      turfName: b.turf?.name,
-      turfLocation: b.turf?.location,
-      turfImage: b.turf?.image_url,
-      turfPrice: b.turf?.price_per_hour,
-      turfCategory: b.turf?.category,
-      ownerName: b.owner?.fullname,
-      ownerPhone: b.owner?.phone,
-    }));
+    if (!bookings || bookings.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        pagination: { total: 0, limit, offset },
+      });
+    }
+
+    // Step 2: Get turf details separately for each booking
+    const enrichedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        let turf = null;
+
+        try {
+          const { data: turfData } = await db
+            .from('turfs')
+            .select('id, name, location, image_url, price_per_hour, category')
+            .eq('id', booking.turf_id)
+            .single();
+          turf = turfData;
+        } catch (e) {
+          console.log('[BookingController] Could not fetch turf:', booking.turf_id);
+        }
+
+        return {
+          ...new Booking(booking).toPublic(),
+          turf,
+        };
+      })
+    );
 
     return res.status(200).json({
       success: true,
-      data: formattedBookings,
+      data: enrichedBookings,
       pagination: { total: count, limit, offset },
     });
   } catch (err) {
@@ -189,7 +186,7 @@ const getUserBookings = async (req, res, next) => {
 
 /**
  * GET /api/bookings/:bookingId
- * Get booking details
+ * Get booking details (FIXED: NO owner_id, NO RELATIONSHIP SYNTAX)
  */
 const getBookingDetails = async (req, res, next) => {
   try {
@@ -198,14 +195,11 @@ const getBookingDetails = async (req, res, next) => {
     const { bookingId } = req.params;
 
     const db = require('../config/db.config');
+
+    // Step 1: Get booking
     const { data: booking, error } = await db
       .from('bookings')
-      .select(`
-        *,
-        turf:turfs(id, name, description, location, price_per_hour, amenities, images),
-        user:users(id, fullname, email, phone),
-        owner:users(id, fullname, email, phone)
-      `)
+      .select('*')
       .eq('id', bookingId)
       .single();
 
@@ -216,28 +210,31 @@ const getBookingDetails = async (req, res, next) => {
       throw err;
     }
 
-    // Check if user is owner or booking creator
-    if (booking.user_id !== userId && booking.owner_id !== userId) {
+    // Check authorization - only user who created booking can view it
+    if (booking.user_id !== userId) {
       const err = new Error('Unauthorized: You do not have access to this booking');
       err.statusCode = 403;
       throw err;
     }
 
+    // Step 2: Get turf details
+    const { data: turf } = await db
+      .from('turfs')
+      .select('id, name, description, location, price_per_hour, amenities, images')
+      .eq('id', booking.turf_id)
+      .single();
+
+    // Step 3: Get booking user details
+    const { data: user } = await db
+      .from('users')
+      .select('id, fullname, email, phone')
+      .eq('id', booking.user_id)
+      .single();
+
     const formattedBooking = {
       ...new Booking(booking).toPublic(),
-      turf: booking.turf,
-      user: {
-        id: booking.user.id,
-        fullname: booking.user.fullname,
-        email: booking.user.email,
-        phone: booking.user.phone,
-      },
-      owner: {
-        id: booking.owner.id,
-        fullname: booking.owner.fullname,
-        email: booking.owner.email,
-        phone: booking.owner.phone,
-      },
+      turf,
+      user,
     };
 
     return res.status(200).json({
@@ -252,7 +249,7 @@ const getBookingDetails = async (req, res, next) => {
 
 /**
  * PUT /api/bookings/:bookingId/cancel
- * Cancel a booking (user can only cancel their own)
+ * Cancel a booking
  */
 const cancelBooking = async (req, res, next) => {
   try {
@@ -261,6 +258,8 @@ const cancelBooking = async (req, res, next) => {
     const { bookingId } = req.params;
 
     const db = require('../config/db.config');
+
+    // Get booking
     const { data: booking, error: fetchError } = await db
       .from('bookings')
       .select('*')
@@ -287,6 +286,7 @@ const cancelBooking = async (req, res, next) => {
       throw err;
     }
 
+    // Update status
     const { data: updated, error: updateError } = await db
       .from('bookings')
       .update({
@@ -298,8 +298,6 @@ const cancelBooking = async (req, res, next) => {
       .single();
 
     if (updateError) throw updateError;
-
-    console.log('[BookingController] Booking cancelled:', bookingId);
 
     return res.status(200).json({
       success: true,

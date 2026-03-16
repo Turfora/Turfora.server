@@ -31,16 +31,29 @@ const createBooking = async (userId, turfId, bookingDate, startTime, endTime, to
   }
 };
 
-const getUserBookings = async (userId) => {
+/**
+ * Get bookings by user ID
+ */
+const getBookingsByUserId = async (userId) => {
   try {
     console.log('[bookingService] Getting bookings for user:', userId);
 
-    const raw = await bookingRepo.getBookingsByUserId(userId);
-    return raw.map((b) => new Booking(b).toPublic());
+    const db = require('../../config/db.config');
+    const { data: bookings, error } = await db
+      .from('bookings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('booking_date', { ascending: false });
+
+    if (error) throw error;
+    return bookings || [];
   } catch (error) {
-    console.error('[bookingService] getUserBookings error:', error.message);
+    console.error('[bookingService] getBookingsByUserId error:', error.message);
     throw error;
   }
 };
 
-module.exports = { createBooking, getUserBookings };
+module.exports = { 
+  createBooking, 
+  getBookingsByUserId,
+};

@@ -12,7 +12,6 @@ class Booking {
     endTime,
     amount,
     status = 'pending',
-    notes = null,
     isActive = true,
     createdAt,
     updatedAt,
@@ -27,7 +26,6 @@ class Booking {
     this.endTime = endTime;
     this.amount = amount;
     this.status = status;
-    this.notes = notes;
     this.isActive = isActive;
     this.createdAt = createdAt;
     this.updatedAt = updatedAt;
@@ -45,7 +43,6 @@ class Booking {
       endTime: this.endTime,
       amount: this.amount,
       status: this.status,
-      notes: this.notes,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
