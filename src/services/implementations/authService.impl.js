@@ -70,7 +70,8 @@ const login = async (email, password) => {
     const user = new User(raw);
     const token = generateToken({ id: user.id, email: user.email });
 
-    return { user: user.toPublic(), token };
+    const publicUser = user.toPublic();
+    return { user: publicUser, token, role: publicUser.role };
   } catch (error) {
     console.error('[authService] Login error:', {
       message: error.message,
