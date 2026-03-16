@@ -48,7 +48,6 @@ const getOwnerBookings = async (req, res, next) => {
         user:users(id, fullname, email, phone)
       `, { count: 'exact' })
       .eq('owner_id', ownerId)
-      .is('deleted_at', null)
       .order('booking_date', { ascending: false });
 
     if (status) {
@@ -135,7 +134,6 @@ const getBookingById = async (req, res, next) => {
         owner:users(id, fullname, email, phone)
       `)
       .eq('id', bookingId)
-      .is('deleted_at', null)
       .single();
 
     if (error || !booking) {

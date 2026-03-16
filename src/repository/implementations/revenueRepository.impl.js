@@ -40,7 +40,6 @@ const findRevenueById = async (id) => {
     .from(TABLE)
     .select('*')
     .eq('id', id)
-    .is('deleted_at', null)
     .single();
 
   if (error && error.code !== 'PGRST116') throw error;
@@ -57,7 +56,6 @@ const findRevenueByOwnerId = async (ownerId, limit = 50, offset = 0) => {
     .from(TABLE)
     .select('*', { count: 'exact' })
     .eq('owner_id', ownerId)
-    .is('deleted_at', null)
     .order('transaction_date', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -78,7 +76,6 @@ const findRevenueByTurfId = async (turfId, limit = 50, offset = 0) => {
     .from(TABLE)
     .select('*', { count: 'exact' })
     .eq('turf_id', turfId)
-    .is('deleted_at', null)
     .order('transaction_date', { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -101,7 +98,6 @@ const findRevenueByDateRange = async (ownerId, startDate, endDate) => {
     .eq('owner_id', ownerId)
     .gte('transaction_date', new Date(startDate).toISOString().split('T')[0])
     .lte('transaction_date', new Date(endDate).toISOString().split('T')[0])
-    .is('deleted_at', null)
     .order('transaction_date', { ascending: false });
 
   if (error) throw error;
@@ -144,7 +140,6 @@ const getTotalRevenueByOwner = async (ownerId) => {
     .select('amount')
     .eq('owner_id', ownerId)
     .eq('status', 'completed')
-    .is('deleted_at', null);
 
   if (error) throw error;
 
@@ -163,7 +158,6 @@ const getTotalRevenueByTurf = async (turfId) => {
     .select('amount')
     .eq('turf_id', turfId)
     .eq('status', 'completed')
-    .is('deleted_at', null);
 
   if (error) throw error;
 

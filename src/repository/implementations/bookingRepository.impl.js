@@ -42,7 +42,6 @@ const findBookingById = async (id) => {
     .from(TABLE)
     .select('*')
     .eq('id', id)
-    .is('deleted_at', null)
     .single();
 
   if (error && error.code !== 'PGRST116') throw error;
@@ -69,7 +68,6 @@ const findTodayBookings = async (ownerId) => {
       .from('turfs')
       .select('id')
       .eq('owner_id', ownerId)
-      .is('deleted_at', null);
 
     if (turfError) {
       console.error('[BookingRepository] Error fetching turfs:', turfError);
@@ -90,7 +88,6 @@ const findTodayBookings = async (ownerId) => {
       .in('turf_id', turfIds)
       .gte('booking_date', todayStr)
       .lt('booking_date', tomorrowStr)
-      .is('deleted_at', null)
       .order('start_time', { ascending: true });
 
     if (error) {
@@ -159,7 +156,6 @@ const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
       .from('turfs')
       .select('id')
       .eq('owner_id', ownerId)
-      .is('deleted_at', null);
 
     if (turfError) {
       console.error('[BookingRepository] Error fetching turfs:', turfError);
@@ -178,7 +174,6 @@ const findBookingsByOwnerId = async (ownerId, limit = 50, offset = 0) => {
       .from(TABLE)
       .select('*', { count: 'exact' })
       .in('turf_id', turfIds)
-      .is('deleted_at', null)
       .order('booking_date', { ascending: false })
       .range(offset, offset + limit - 1);
 
@@ -248,7 +243,6 @@ const updateBookingStatus = async (id, status, ownerId) => {
     .from(TABLE)
     .select('id, turf_id')
     .eq('id', id)
-    .is('deleted_at', null)
     .single();
 
   if (fetchError || !booking) {
@@ -262,7 +256,6 @@ const updateBookingStatus = async (id, status, ownerId) => {
     .select('id')
     .eq('id', booking.turf_id)
     .eq('owner_id', ownerId)
-    .is('deleted_at', null)
     .single();
 
   if (turfError || !turf) {
@@ -306,7 +299,6 @@ const getBookingsByDateRange = async (ownerId, startDate, endDate) => {
       .from('turfs')
       .select('id')
       .eq('owner_id', ownerId)
-      .is('deleted_at', null);
 
     if (turfError) throw turfError;
 
@@ -323,7 +315,6 @@ const getBookingsByDateRange = async (ownerId, startDate, endDate) => {
       .in('turf_id', turfIds)
       .gte('booking_date', startStr)
       .lte('booking_date', endStr)
-      .is('deleted_at', null)
       .order('booking_date', { ascending: false });
 
     if (error) throw error;
