@@ -9,6 +9,9 @@ const authMiddleware = require('../middleware/auth.middleware');
 // Get all turfs
 router.get('/', turfController.getTurfs);
 
+// Get popular turfs (must be before /:id)
+router.get('/popular', turfController.getPopularTurfs);
+
 // Get single turf by ID
 router.get('/:id', turfController.getTurfById);
 

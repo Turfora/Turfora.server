@@ -44,12 +44,12 @@ const getOwnerBookings = async (req, res, next) => {
       .from('bookings')
       .select(`
         *,
-        turf:turfs(id, name, location, pricePerHour),
-        user:users(id, fullName, email, phoneNumber)
+        turf:turfs(id, name, location, price_per_hour),
+        user:users(id, fullname, email, phone)
       `, { count: 'exact' })
-      .eq('ownerId', ownerId)
-      .is('deletedAt', null)
-      .order('bookingDate', { ascending: false });
+      .eq('owner_id', ownerId)
+      .is('deleted_at', null)
+      .order('booking_date', { ascending: false });
 
     if (status) {
       query = query.eq('status', status);
@@ -63,10 +63,10 @@ const getOwnerBookings = async (req, res, next) => {
       ...new Booking(b).toPublic(),
       turfName: b.turf?.name,
       turfLocation: b.turf?.location,
-      turfPrice: b.turf?.pricePerHour,
-      userName: b.user?.fullName,
+      turfPrice: b.turf?.price_per_hour,
+      userName: b.user?.fullname,
       userEmail: b.user?.email,
-      userPhone: b.user?.phoneNumber,
+      userPhone: b.user?.phone,
     }));
 
     return res.status(200).json({
@@ -130,12 +130,12 @@ const getBookingById = async (req, res, next) => {
       .from('bookings')
       .select(`
         *,
-        turf:turfs(id, name, description, location, pricePerHour, amenities, images),
-        user:users(id, fullName, email, phoneNumber),
-        owner:users(id, fullName, email, phoneNumber)
+        turf:turfs(id, name, description, location, price_per_hour, amenities, images),
+        user:users(id, fullname, email, phone),
+        owner:users(id, fullname, email, phone)
       `)
       .eq('id', bookingId)
-      .is('deletedAt', null)
+      .is('deleted_at', null)
       .single();
 
     if (error || !booking) {
@@ -145,7 +145,7 @@ const getBookingById = async (req, res, next) => {
     }
 
     // Check if user is owner or booking creator
-    if (booking.userId !== userId && booking.ownerId !== userId) {
+    if (booking.user_id !== userId && booking.owner_id !== userId) {
       const err = new Error('Unauthorized: You do not have access to this booking');
       err.statusCode = 403;
       throw err;
@@ -156,15 +156,15 @@ const getBookingById = async (req, res, next) => {
       turf: booking.turf,
       user: {
         id: booking.user.id,
-        fullName: booking.user.fullName,
+        fullname: booking.user.fullname,
         email: booking.user.email,
-        phoneNumber: booking.user.phoneNumber,
+        phone: booking.user.phone,
       },
       owner: {
         id: booking.owner.id,
-        fullName: booking.owner.fullName,
+        fullname: booking.owner.fullname,
         email: booking.owner.email,
-        phoneNumber: booking.owner.phoneNumber,
+        phone: booking.owner.phone,
       },
     };
 

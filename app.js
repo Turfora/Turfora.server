@@ -7,6 +7,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const turfRoutes = require('./src/routes/turfRoutes');
 const bookingRoutes = require('./src/routes/bookingRoutes');
 const revenueRoutes = require('./src/routes/revenueRoutes');
+const ownerRoutes = require('./src/routes/ownerRoutes');
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/turfs', turfRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/revenue', revenueRoutes);
+app.use('/api/owner', ownerRoutes);
 
 // ===== HEALTH CHECK =====
 app.get('/api/health', (req, res) => {

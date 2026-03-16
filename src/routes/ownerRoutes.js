@@ -1,10 +1,20 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const ownerController = require('../controllers/ownerController');
-const { authenticate } = require('../middleware/auth');
+const authMiddleware = require('../middleware/auth.middleware');
 
-// Apply authentication to all routes
-router.use(authenticate);
+const ownerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again later.' },
+});
+
+// Apply rate limiting and authentication to all routes
+router.use(ownerLimiter);
+router.use(authMiddleware);
 
 // TURF ROUTES
 router.post('/turfs/create', ownerController.createTurf);
